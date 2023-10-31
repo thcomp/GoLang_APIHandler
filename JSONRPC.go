@@ -100,8 +100,31 @@ func NewJSONRPCRequest(id interface{}, method string, params interface{}) (*JSON
 }
 
 func ParseJSONRequest(reader io.Reader) (*JSONRPCRequest, error) {
-	ret := &JSONRPCRequest{}
-	retErr := json.NewDecoder(reader).Decode(ret)
+	ret := (*JSONRPCRequest)(nil)
+	tempRet := map[string]interface{}{}
+	retErr := json.NewDecoder(reader).Decode(&tempRet)
+
+	if retErr == nil {
+		ret = &JSONRPCRequest{}
+		if valueInf, exist := tempRet["jsonrpc"]; exist {
+			valueInfHelper := ThcompUtility.NewInterfaceHelper(valueInf)
+			if valueInfHelper.IsString() {
+				ret.JSONRPC.Version, _ = valueInfHelper.GetString()
+			}
+		}
+		if valueInf, exist := tempRet["id"]; exist {
+			ret.JSONRPC.id = valueInf
+		}
+		if valueInf, exist := tempRet["method"]; exist {
+			valueInfHelper := ThcompUtility.NewInterfaceHelper(valueInf)
+			if valueInfHelper.IsString() {
+				ret.Method, _ = valueInfHelper.GetString()
+			}
+		}
+		if valueInf, exist := tempRet["params"]; exist {
+			ret.Params = valueInf
+		}
+	}
 
 	return ret, retErr
 }
@@ -139,8 +162,46 @@ func NewJSONRPCResponseFromRequest(request *JSONRPCRequest) *JSONRPCResponse {
 }
 
 func ParseJSONResponse(reader io.Reader) (*JSONRPCResponse, error) {
-	ret := &JSONRPCResponse{}
-	retErr := json.NewDecoder(reader).Decode(ret)
+	ret := (*JSONRPCResponse)(nil)
+	tempRet := map[string]interface{}{}
+	retErr := json.NewDecoder(reader).Decode(&tempRet)
+
+	if retErr == nil {
+		ret = &JSONRPCResponse{}
+		if valueInf, exist := tempRet["jsonrpc"]; exist {
+			valueInfHelper := ThcompUtility.NewInterfaceHelper(valueInf)
+			if valueInfHelper.IsString() {
+				ret.JSONRPC.Version, _ = valueInfHelper.GetString()
+			}
+		}
+		if valueInf, exist := tempRet["id"]; exist {
+			ret.JSONRPC.id = valueInf
+		}
+		if valueInf, exist := tempRet["result"]; exist {
+			ret.Result = valueInf
+		}
+		if valueInf, exist := tempRet["error"]; exist {
+			if errorMap, assertionOK := valueInf.(map[string]interface{}); assertionOK {
+				ret.Error = &JSONRPCError{}
+				if valueInf, exist := errorMap["code"]; exist {
+					valueInfHelper := ThcompUtility.NewInterfaceHelper(valueInf)
+					if valueInfHelper.IsNumber() {
+						tempValue, _ := valueInfHelper.GetNumber()
+						ret.Error.Code = int(tempValue)
+					}
+				}
+				if valueInf, exist := errorMap["message"]; exist {
+					valueInfHelper := ThcompUtility.NewInterfaceHelper(valueInf)
+					if valueInfHelper.IsString() {
+						ret.Error.Message, _ = valueInfHelper.GetString()
+					}
+				}
+				if valueInf, exist := errorMap["data"]; exist {
+					ret.Error.Data = valueInf
+				}
+			}
+		}
+	}
 
 	return ret, retErr
 }
