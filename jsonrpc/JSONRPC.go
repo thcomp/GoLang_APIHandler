@@ -1,15 +1,17 @@
-package APIHandler
+package jsonroc
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"sync"
 
 	ThcompUtility "github.com/thcomp/GoLang_Utility"
 )
 
-var sAutoID int64
+var sAutoID int64 = 0
 var sAutoIDMutex sync.Mutex
 
 type JSONRPC struct {
@@ -22,6 +24,13 @@ func newJSONRPC() *JSONRPC {
 }
 
 func newJSONRPCWithID(id interface{}) *JSONRPC {
+	if id == nil {
+		sAutoIDMutex.Lock()
+		defer sAutoIDMutex.Unlock()
+		sAutoID++
+		id = sAutoID
+	}
+
 	return &JSONRPC{Version: "2.0", id: id}
 }
 
@@ -129,6 +138,36 @@ func ParseJSONRequest(reader io.Reader) (*JSONRPCRequest, error) {
 	return ret, retErr
 }
 
+func (req *JSONRPCRequest) EncodeByJSON() ([]byte, error) {
+	tempMap := map[string]interface{}{
+		"jsonrpc": req.JSONRPC.Version,
+		"method":  req.Method,
+	}
+
+	if req.JSONRPC.id != nil {
+		tempMap["id"] = req.JSONRPC.id
+	}
+	if req.Params != nil {
+		tempMap["params"] = req.Params
+	}
+
+	return json.Marshal(tempMap)
+}
+
+func (req *JSONRPCRequest) ParseParams(toPtr interface{}) (retErr error) {
+	if reflect.TypeOf(toPtr).Kind() == reflect.Pointer {
+		if tempJsonBytes, marshalErr := json.Marshal(req.Params); marshalErr == nil {
+			retErr = json.Unmarshal(tempJsonBytes, toPtr)
+		} else {
+			retErr = marshalErr
+		}
+	} else {
+		retErr = fmt.Errorf("toPtr is not pointer")
+	}
+
+	return retErr
+}
+
 type JSONRPCResponse struct {
 	JSONRPC
 	Result interface{}   `json:"result"`
@@ -206,10 +245,56 @@ func ParseJSONResponse(reader io.Reader) (*JSONRPCResponse, error) {
 	return ret, retErr
 }
 
+func (res *JSONRPCResponse) EncodeByJSON() ([]byte, error) {
+	tempMap := map[string]interface{}{
+		"jsonrpc": res.JSONRPC.Version,
+	}
+
+	if res.JSONRPC.id != nil {
+		tempMap["id"] = res.JSONRPC.id
+	}
+	if res.Result != nil {
+		tempMap["result"] = res.Result
+	}
+	if res.Error != nil {
+		tempMap["error"] = res.Error
+	}
+
+	return json.Marshal(tempMap)
+}
+
+func (res *JSONRPCResponse) ParseResult(toPtr interface{}) (retErr error) {
+	if reflect.TypeOf(toPtr).Kind() == reflect.Pointer {
+		if tempJsonBytes, marshalErr := json.Marshal(res.Result); marshalErr == nil {
+			retErr = json.Unmarshal(tempJsonBytes, toPtr)
+		} else {
+			retErr = marshalErr
+		}
+	} else {
+		retErr = fmt.Errorf("toPtr is not pointer")
+	}
+
+	return retErr
+}
+
 func NewJSONRPCError(code int, message string, data interface{}) *JSONRPCError {
 	return &JSONRPCError{
 		Code:    code,
 		Message: message,
 		Data:    data,
 	}
+}
+
+func (err *JSONRPCError) ParseData(toPtr interface{}) (retErr error) {
+	if reflect.TypeOf(toPtr).Kind() == reflect.Pointer {
+		if tempJsonBytes, marshalErr := json.Marshal(err.Data); marshalErr == nil {
+			retErr = json.Unmarshal(tempJsonBytes, toPtr)
+		} else {
+			retErr = marshalErr
+		}
+	} else {
+		retErr = fmt.Errorf("toPtr is not pointer")
+	}
+
+	return retErr
 }
