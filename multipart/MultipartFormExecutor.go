@@ -1,20 +1,25 @@
 package multipart
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"strings"
 
+	root "github.com/thcomp/GoLang_APIHandler"
 	ThcompUtility "github.com/thcomp/GoLang_Utility"
 )
 
 type MultipartFormExecutor struct {
+	cacheEditorFactory ThcompUtility.CacheEditorFactory
+	handler            root.ExecuteHandler
+}
+
+func (parser *MultipartFormExecutor) CacheEditorFactory(cacheEditorFactory ThcompUtility.CacheEditorFactory) {
+	parser.cacheEditorFactory = cacheEditorFactory
 }
 
 func (parser *MultipartFormExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
-	formData := (*&MultipartFormData)(nil)
+	formData := (*MultipartFormData)(nil)
 	if multipartHelper, err := ThcompUtility.NewMultipartHelperFromHttpRequest(req); err == nil {
 		formData = &MultipartFormData{helper: multipartHelper}
 	} else {
@@ -25,61 +30,60 @@ func (parser *MultipartFormExecutor) ParseRequest(req *http.Request) (ret interf
 }
 
 func (parser *MultipartFormExecutor) ParseResponse(res *http.Response) (ret interface{}, retErr error) {
-	reader := io.Reader(nil)
-
 	if contentTypeValue := res.Header.Get(`Content-type`); contentTypeValue != `` {
-		contentTypeValue = strings.ToLower(contentTypeValue)
-		if strings.HasPrefix(contentTypeValue, `application/x-www-form-urlencoded`) {
-			if originalData, readErr := ioutil.ReadAll(res.Body); readErr == nil {
-				reader = bytes.NewReader(originalData)
-			} else {
-				retErr = readErr
+		lowerContentTypeValue := strings.ToLower(contentTypeValue)
+		if strings.HasPrefix(lowerContentTypeValue, `multipart/form-data`) {
+			boundaryText := (*string)(nil)
+			partialTexts := strings.Split(contentTypeValue, `boundary=`)
+			if len(partialTexts) >= 2 {
+				for i := 1; i < len(partialTexts); i++ {
+					prevPart := strings.TrimRight(partialTexts[i-1], " \t")
+					if prevPart[len(prevPart)-1] == ';' {
+						subPartialTexts := strings.Split(partialTexts[i], ";")
+						boundaryText = &subPartialTexts[0]
+						break
+					}
+
+				}
 			}
+
+			if boundaryText != nil {
+				cacheEditorFactory := parser.cacheEditorFactory
+				if parser.cacheEditorFactory == nil {
+					cacheEditorFactory = ThcompUtility.NewMemoryCacheEditorFactory()
+				}
+
+				if multipartHelper, err := ThcompUtility.NewMultipartHelper(res.Body, *boundaryText, cacheEditorFactory); err == nil {
+					ret = &MultipartFormData{
+						helper: multipartHelper,
+					}
+				} else {
+					retErr = err
+				}
+			} else {
+				retErr = fmt.Errorf("not exist boundary text in content-type header: %s", contentTypeValue)
+			}
+		} else {
+			retErr = fmt.Errorf("not multipart/form-data: %s", contentTypeValue)
 		}
+	} else {
+		retErr = fmt.Errorf("not exist content-type header")
 	}
 
-	if reader != nil {
-		return parser.parseEntity(reader)
-	} else {
-		return nil, retErr
-	}
+	return
 }
 
-func (parser *MultipartFormExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) (err error) {
-	if len(condMap) > 0 {
-		if parser.ExecutorMap == nil {
-			parser.ExecutorMap = map[string](*sExecutorInfo){}
-		}
-
-		for key, value := range condMap {
-			parser.ExecutorMap[key] = &sExecutorInfo{
-				value:   value,
-				handler: handler,
-			}
-		}
-	}
-
-	return err
+func (parser *MultipartFormExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) error {
+	parser.handler = handler
+	return nil
 }
 
 func (parser *MultipartFormExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}) {
-	if urlEncData, assertionOK := parsedEntity.(*URLEncData); assertionOK {
-		for queryKey, queryValues := range *urlEncData.queryValues {
-			if executorInfo, exist := parser.ExecutorMap[queryKey]; exist {
-				matched := false
+	if multipartFormData, assertionOK := parsedEntity.(*MultipartFormData); assertionOK {
+		defer multipartFormData.Close()
 
-				for _, queryValue := range queryValues {
-					if executorInfo.value == queryValue {
-						executorInfo.handler(req, res, parsedEntity)
-						matched = true
-						break
-					}
-				}
-
-				if matched {
-					break
-				}
-			}
-		}
+		parser.handler(req, res, multipartFormData)
+	} else {
+		res.WriteHeader(http.StatusInternalServerError)
 	}
 }
