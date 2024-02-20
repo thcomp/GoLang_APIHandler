@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	root "github.com/thcomp/GoLang_APIHandler"
 )
@@ -13,30 +14,48 @@ type JSONRPCExecutor struct {
 }
 
 func (parser *JSONRPCExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
-	jsonReq := JSONRPCRequest{}
-	if parseErr := json.NewDecoder(req.Body).Decode(&jsonReq); parseErr == nil {
-		if jsonReq.Version != "2.0" || jsonReq.Method == "" {
-			retErr = fmt.Errorf("can not parse on JSONRPC Request")
+	if parser.IsJSON(req.Header) {
+		jsonReq := JSONRPCRequest{}
+		if parseErr := json.NewDecoder(req.Body).Decode(&jsonReq); parseErr == nil {
+			if jsonReq.Version != "2.0" || jsonReq.Method == "" {
+				retErr = fmt.Errorf("can not parse on JSONRPC Request")
+			} else {
+				ret = &jsonReq
+			}
 		} else {
-			ret = &jsonReq
+			retErr = parseErr
 		}
 	} else {
-		retErr = parseErr
+		retErr = root.ErrUnsupportEntity
 	}
 
 	return
 }
 
 func (parser *JSONRPCExecutor) ParseResponse(res *http.Response) (ret interface{}, retErr error) {
-	jsonRes := JSONRPCResponse{}
-	if parseErr := json.NewDecoder(res.Body).Decode(&jsonRes); parseErr == nil {
-		if jsonRes.Version != "2.0" {
-			retErr = fmt.Errorf("can not parse on JSONRPC Request")
+	if parser.IsJSON(res.Header) {
+		jsonRes := JSONRPCResponse{}
+		if parseErr := json.NewDecoder(res.Body).Decode(&jsonRes); parseErr == nil {
+			if jsonRes.Version != "2.0" {
+				retErr = fmt.Errorf("can not parse on JSONRPC Request")
+			} else {
+				ret = &jsonRes
+			}
 		} else {
-			ret = &jsonRes
+			retErr = parseErr
 		}
 	} else {
-		retErr = parseErr
+		retErr = root.ErrUnsupportEntity
+	}
+
+	return
+}
+
+func (parser *JSONRPCExecutor) IsJSON(headers http.Header) (ret bool) {
+	mimetype := headers.Get("Content-type")
+	lowerMimetype := strings.ToLower(mimetype)
+	if strings.HasPrefix(lowerMimetype, "application/json") {
+		ret = true
 	}
 
 	return

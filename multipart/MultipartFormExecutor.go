@@ -73,6 +73,16 @@ func (parser *MultipartFormExecutor) ParseResponse(res *http.Response) (ret inte
 	return
 }
 
+func (parser *MultipartFormExecutor) IsMultipartFormData(headers http.Header) (ret bool) {
+	mimetype := headers.Get(`Content-type`)
+	lowerMimetype := strings.ToLower(mimetype)
+	if strings.HasPrefix(lowerMimetype, `multipart/form-data`) {
+		ret = true
+	}
+
+	return
+}
+
 func (parser *MultipartFormExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) error {
 	parser.handler = handler
 	return nil

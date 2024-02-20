@@ -8,7 +8,6 @@ import (
 )
 
 type ExecuteHandler func(req *http.Request, res http.ResponseWriter, parsedEntity interface{})
-type AuthHandler func(*http.Request) (*AuthorizedUser, error)
 
 type APIManager struct {
 	apiMap    map[string](*apiInfo)
@@ -37,8 +36,8 @@ func RegisterDefaultAPI(executor Executor, params ...interface{}) {
 
 	if len(params) > 0 {
 		for _, paramInf := range params {
-			if paramAuthHandler, assertionOK := paramInf.(AuthHandler); assertionOK {
-				tempApiInfo.authHandler = paramAuthHandler
+			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
+				tempApiInfo.authrizer = paramAuthHandler
 			}
 		}
 	}
@@ -59,8 +58,8 @@ func RegisterAPI(path string, executor Executor, params ...interface{}) {
 
 	if len(params) > 0 {
 		for _, paramInf := range params {
-			if paramAuthHandler, assertionOK := paramInf.(AuthHandler); assertionOK {
-				tempApiInfo.authHandler = paramAuthHandler
+			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
+				tempApiInfo.authrizer = paramAuthHandler
 			}
 		}
 	}
@@ -83,8 +82,8 @@ func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...inter
 
 	if len(params) > 0 {
 		for _, paramInf := range params {
-			if paramAuthHandler, assertionOK := paramInf.(AuthHandler); assertionOK {
-				tempApiInfo.authHandler = paramAuthHandler
+			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
+				tempApiInfo.authrizer = paramAuthHandler
 			}
 		}
 	}
@@ -105,8 +104,8 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 
 	if len(params) > 0 {
 		for _, paramInf := range params {
-			if paramAuthHandler, assertionOK := paramInf.(AuthHandler); assertionOK {
-				tempApiInfo.authHandler = paramAuthHandler
+			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
+				tempApiInfo.authrizer = paramAuthHandler
 			}
 		}
 	}
@@ -123,21 +122,25 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	exexutorApiInfo := (*apiInfo)(nil)
+	executorApiInfo := (*apiInfo)(nil)
 
 	if apiInfo, exist := manager.apiMap[path]; exist {
-		exexutorApiInfo = apiInfo
+		executorApiInfo = apiInfo
 	} else {
 		if apiInfo, exist := manager.apiMap["/"]; exist {
-			exexutorApiInfo = apiInfo
+			executorApiInfo = apiInfo
 		}
 	}
 
-	if exexutorApiInfo != nil {
-		if parsedEntity, parseErr := exexutorApiInfo.executor.ParseRequestBody(req); parseErr == nil {
-			exexutorApiInfo.executor.Execute(req, res, parsedEntity)
+	if executorApiInfo != nil {
+		if parsedEntity, parseErr := executorApiInfo.executor.ParseRequestBody(req); parseErr == nil {
+			executorApiInfo.executor.Execute(req, res, parsedEntity)
 		} else {
 			ThcompUtility.LogfE("fail to parse request entity: %v", parseErr)
+			res.WriteHeader(http.StatusInternalServerError)
 		}
+	} else {
+		ThcompUtility.LogfE("not register executor: %s", path)
+		res.WriteHeader(http.StatusBadRequest)
 	}
 }

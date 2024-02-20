@@ -1,6 +1,7 @@
 package APIHandler
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -12,6 +13,8 @@ type Executor interface {
 }
 
 type apiInfo struct {
-	executor    Executor
-	authHandler AuthHandler
+	executor  Executor
+	authrizer Authorizer
 }
+
+var ErrUnsupportEntity = errors.New("unsupport entity")
