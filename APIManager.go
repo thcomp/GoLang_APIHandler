@@ -75,7 +75,7 @@ func ExecuteRequest(req *http.Request, res http.ResponseWriter) {
 	sAPIManager.ExecuteRequest(req, res)
 }
 
-func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...interface{}) {
+func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...interface{}) *APIManager {
 	tempApiInfo := &apiInfo{
 		executor: executor,
 	}
@@ -89,9 +89,10 @@ func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...inter
 	}
 
 	manager.apiMap["/"] = tempApiInfo
+	return manager
 }
 
-func (manager *APIManager) RegisterAPI(path string, executor Executor, params ...interface{}) {
+func (manager *APIManager) RegisterAPI(path string, executor Executor, params ...interface{}) *APIManager {
 	absPath := path
 
 	if !strings.HasPrefix(absPath, "/") {
@@ -111,10 +112,12 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 	}
 
 	manager.apiMap[absPath] = tempApiInfo
+	return manager
 }
 
-func (manager *APIManager) RegisterParser(executor Executor) {
+func (manager *APIManager) RegisterParser(executor Executor) *APIManager {
 	manager.executors = append(manager.executors, executor)
+	return manager
 }
 
 func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWriter) {
