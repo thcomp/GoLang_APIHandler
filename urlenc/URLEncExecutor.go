@@ -20,6 +20,23 @@ type URLEncExecutor struct {
 	ExecutorMap map[string](*sExecutorInfo)
 }
 
+func (parser *URLEncExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) *URLEncExecutor {
+	if len(condMap) > 0 {
+		if parser.ExecutorMap == nil {
+			parser.ExecutorMap = map[string](*sExecutorInfo){}
+		}
+
+		for key, value := range condMap {
+			parser.ExecutorMap[key] = &sExecutorInfo{
+				value:   value,
+				handler: handler,
+			}
+		}
+	}
+
+	return parser
+}
+
 func (parser *URLEncExecutor) parseEntity(reader io.Reader) (ret *URLEncData, retErr error) {
 	urlEncData := URLEncData{}
 	if valueBytes, readErr := ioutil.ReadAll(reader); readErr == nil {
@@ -88,23 +105,6 @@ func (parser *URLEncExecutor) ParseResponse(res *http.Response) (ret interface{}
 	} else {
 		return nil, retErr
 	}
-}
-
-func (parser *URLEncExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) (err error) {
-	if len(condMap) > 0 {
-		if parser.ExecutorMap == nil {
-			parser.ExecutorMap = map[string](*sExecutorInfo){}
-		}
-
-		for key, value := range condMap {
-			parser.ExecutorMap[key] = &sExecutorInfo{
-				value:   value,
-				handler: handler,
-			}
-		}
-	}
-
-	return err
 }
 
 func (parser *URLEncExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}) {

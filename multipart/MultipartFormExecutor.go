@@ -14,6 +14,10 @@ type MultipartFormExecutor struct {
 	handler            root.ExecuteHandler
 }
 
+func (parser *MultipartFormExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) *MultipartFormExecutor {
+	return parser
+}
+
 func (parser *MultipartFormExecutor) CacheEditorFactory(cacheEditorFactory ThcompUtility.CacheEditorFactory) {
 	parser.cacheEditorFactory = cacheEditorFactory
 }
@@ -81,11 +85,6 @@ func (parser *MultipartFormExecutor) IsMultipartFormData(headers http.Header) (r
 	}
 
 	return
-}
-
-func (parser *MultipartFormExecutor) RegisterExecuteHandler(condMap map[string]string, handler root.ExecuteHandler) error {
-	parser.handler = handler
-	return nil
 }
 
 func (parser *MultipartFormExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}) {

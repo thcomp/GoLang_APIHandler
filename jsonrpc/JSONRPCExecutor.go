@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	root "github.com/thcomp/GoLang_APIHandler"
+	ThcompUtility "github.com/thcomp/GoLang_Utility"
 )
 
 type JSONRPCExecutor struct {
@@ -14,6 +15,28 @@ type JSONRPCExecutor struct {
 }
 
 const CondMapKeyMethod = "method"
+
+func NewJSONRPCExecutor() *JSONRPCExecutor {
+	return &JSONRPCExecutor{}
+}
+
+func (parser *JSONRPCExecutor) RegisterExecuteHandler(condMap map[string]interface{}, handler root.ExecuteHandler) *JSONRPCExecutor {
+	if methodInf, exist := condMap[CondMapKeyMethod]; exist {
+		if method, assertionOK := methodInf.(string); assertionOK {
+			if parser.ExecutorMap == nil {
+				parser.ExecutorMap = map[string](root.ExecuteHandler){}
+			}
+
+			parser.ExecutorMap[method] = handler
+		} else {
+			ThcompUtility.LogfE("%s format not string", CondMapKeyMethod)
+		}
+	} else {
+		ThcompUtility.LogfE("%s not exist in condMap", CondMapKeyMethod)
+	}
+
+	return parser
+}
 
 func (parser *JSONRPCExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
 	if parser.IsJSON(req.Header) {
@@ -61,24 +84,6 @@ func (parser *JSONRPCExecutor) IsJSON(headers http.Header) (ret bool) {
 	}
 
 	return
-}
-
-func (parser *JSONRPCExecutor) RegisterExecuteHandler(condMap map[string]interface{}, handler root.ExecuteHandler) (err error) {
-	if methodInf, exist := condMap[CondMapKeyMethod]; exist {
-		if method, assertionOK := methodInf.(string); assertionOK {
-			if parser.ExecutorMap == nil {
-				parser.ExecutorMap = map[string](root.ExecuteHandler){}
-			}
-
-			parser.ExecutorMap[method] = handler
-		} else {
-			err = fmt.Errorf("%s format not string", CondMapKeyMethod)
-		}
-	} else {
-		err = fmt.Errorf("%s not exist in condMap", CondMapKeyMethod)
-	}
-
-	return err
 }
 
 func (parser *JSONRPCExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}) {
