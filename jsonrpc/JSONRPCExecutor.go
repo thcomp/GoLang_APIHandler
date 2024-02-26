@@ -13,6 +13,8 @@ type JSONRPCExecutor struct {
 	ExecutorMap map[string](root.ExecuteHandler)
 }
 
+const CondMapKeyMethod = "method"
+
 func (parser *JSONRPCExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
 	if parser.IsJSON(req.Header) {
 		jsonReq := JSONRPCRequest{}
@@ -62,7 +64,7 @@ func (parser *JSONRPCExecutor) IsJSON(headers http.Header) (ret bool) {
 }
 
 func (parser *JSONRPCExecutor) RegisterExecuteHandler(condMap map[string]interface{}, handler root.ExecuteHandler) (err error) {
-	if methodInf, exist := condMap["method"]; exist {
+	if methodInf, exist := condMap[CondMapKeyMethod]; exist {
 		if method, assertionOK := methodInf.(string); assertionOK {
 			if parser.ExecutorMap == nil {
 				parser.ExecutorMap = map[string](root.ExecuteHandler){}
@@ -70,10 +72,10 @@ func (parser *JSONRPCExecutor) RegisterExecuteHandler(condMap map[string]interfa
 
 			parser.ExecutorMap[method] = handler
 		} else {
-			err = fmt.Errorf("method format not string")
+			err = fmt.Errorf("%s format not string", CondMapKeyMethod)
 		}
 	} else {
-		err = fmt.Errorf("method not exist in condMap")
+		err = fmt.Errorf("%s not exist in condMap", CondMapKeyMethod)
 	}
 
 	return err
