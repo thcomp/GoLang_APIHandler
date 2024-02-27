@@ -1,13 +1,16 @@
 package APIHandler
 
 import (
+	"bytes"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	ThcompUtility "github.com/thcomp/GoLang_Utility"
 )
 
-type ExecuteHandler func(req *http.Request, res http.ResponseWriter, parsedEntity interface{})
+type ExecuteHandler func(req *http.Request, res http.ResponseWriter, parsedEntity interface{}, authUser AuthorizedUser)
 
 type APIManager struct {
 	apiMap    map[string](*apiInfo)
@@ -37,7 +40,7 @@ func RegisterDefaultAPI(executor Executor, params ...interface{}) {
 	if len(params) > 0 {
 		for _, paramInf := range params {
 			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
-				tempApiInfo.authrizer = paramAuthHandler
+				tempApiInfo.authorizer = paramAuthHandler
 			}
 		}
 	}
@@ -59,7 +62,7 @@ func RegisterAPI(path string, executor Executor, params ...interface{}) {
 	if len(params) > 0 {
 		for _, paramInf := range params {
 			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
-				tempApiInfo.authrizer = paramAuthHandler
+				tempApiInfo.authorizer = paramAuthHandler
 			}
 		}
 	}
@@ -83,7 +86,7 @@ func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...inter
 	if len(params) > 0 {
 		for _, paramInf := range params {
 			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
-				tempApiInfo.authrizer = paramAuthHandler
+				tempApiInfo.authorizer = paramAuthHandler
 			}
 		}
 	}
@@ -106,7 +109,7 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 	if len(params) > 0 {
 		for _, paramInf := range params {
 			if paramAuthHandler, assertionOK := paramInf.(Authorizer); assertionOK {
-				tempApiInfo.authrizer = paramAuthHandler
+				tempApiInfo.authorizer = paramAuthHandler
 			}
 		}
 	}
@@ -136,11 +139,55 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 	}
 
 	if executorApiInfo != nil {
-		if parsedEntity, parseErr := executorApiInfo.executor.ParseRequestBody(req); parseErr == nil {
-			executorApiInfo.executor.Execute(req, res, parsedEntity)
+		authorized := (*bool)(nil)
+		authorizedUser := (AuthorizedUser)(nil)
+
+		if executorApiInfo.IsAuthorizeByHttpHeader() {
+			if tempAuthorizedUser, authErr := executorApiInfo.authorizer.Authorize(req); authErr == nil {
+				authorizedUser = *tempAuthorizedUser
+				tempAuthorized := true
+				authorized = &tempAuthorized
+			} else {
+				tempAuthorized := false
+				authorized = &tempAuthorized
+			}
+		}
+
+		if authorized == nil || (*authorized) {
+			entityReader := (*ThcompUtility.NopCloser)(nil)
+			if entity, readErr := ioutil.ReadAll(req.Body); readErr == nil {
+				entityReader = ThcompUtility.NewNopCloser(bytes.NewReader(entity))
+				req.Body = entityReader
+				entityReader.Seek(0, io.SeekStart)
+
+				if authorized == nil && executorApiInfo.authorizer.AuthorizeBy() == ByHttpEntity {
+					if tempAuthorizedUser, authErr := executorApiInfo.authorizer.Authorize(req); authErr == nil {
+						authorizedUser = *tempAuthorizedUser
+						tempAuthorized := true
+						authorized = &tempAuthorized
+					} else {
+						tempAuthorized := false
+						authorized = &tempAuthorized
+					}
+				}
+
+				if authorized == nil || (*authorized) {
+					if parsedEntity, parseErr := executorApiInfo.executor.ParseRequestBody(req); parseErr == nil {
+						entityReader.Seek(0, io.SeekStart)
+
+						executorApiInfo.executor.Execute(req, res, parsedEntity, authorizedUser)
+					} else {
+						ThcompUtility.LogfE("fail to parse request entity: %v", parseErr)
+						res.WriteHeader(http.StatusInternalServerError)
+					}
+				} else {
+					executorApiInfo.authorizer.Authenticate(res)
+				}
+			} else {
+				res.WriteHeader(http.StatusInternalServerError)
+			}
 		} else {
-			ThcompUtility.LogfE("fail to parse request entity: %v", parseErr)
-			res.WriteHeader(http.StatusInternalServerError)
+			executorApiInfo.authorizer.Authenticate(res)
 		}
 	} else {
 		ThcompUtility.LogfE("not register executor: %s", path)
