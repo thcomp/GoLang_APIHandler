@@ -107,7 +107,7 @@ func (parser *URLEncExecutor) ParseResponse(res *http.Response) (ret interface{}
 	}
 }
 
-func (parser *URLEncExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}, authUser root.AuthorizedUser) {
+func (parser *URLEncExecutor) Execute(req *http.Request, res http.ResponseWriter, authUser root.AuthorizedUser, parsedEntity interface{}) {
 	if urlEncData, assertionOK := parsedEntity.(*URLEncData); assertionOK {
 		for queryKey, queryValues := range *urlEncData.queryValues {
 			if executorInfo, exist := parser.ExecutorMap[queryKey]; exist {

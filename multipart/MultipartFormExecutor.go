@@ -87,7 +87,7 @@ func (parser *MultipartFormExecutor) IsMultipartFormData(headers http.Header) (r
 	return
 }
 
-func (parser *MultipartFormExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}, authUser root.AuthorizedUser) {
+func (parser *MultipartFormExecutor) Execute(req *http.Request, res http.ResponseWriter, authUser root.AuthorizedUser, parsedEntity interface{}) {
 	if multipartFormData, assertionOK := parsedEntity.(*MultipartFormData); assertionOK {
 		defer multipartFormData.Close()
 

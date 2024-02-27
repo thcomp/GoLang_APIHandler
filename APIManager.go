@@ -175,7 +175,7 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 					if parsedEntity, parseErr := executorApiInfo.executor.ParseRequestBody(req); parseErr == nil {
 						entityReader.Seek(0, io.SeekStart)
 
-						executorApiInfo.executor.Execute(req, res, parsedEntity, authorizedUser)
+						executorApiInfo.executor.Execute(req, res, authorizedUser, parsedEntity)
 					} else {
 						ThcompUtility.LogfE("fail to parse request entity: %v", parseErr)
 						res.WriteHeader(http.StatusInternalServerError)
@@ -191,6 +191,6 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 		}
 	} else {
 		ThcompUtility.LogfE("not register executor: %s", path)
-		res.WriteHeader(http.StatusBadRequest)
+		res.WriteHeader(http.StatusNotFound)
 	}
 }

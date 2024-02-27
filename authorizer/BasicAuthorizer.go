@@ -82,7 +82,6 @@ func (authorizer *BasicAuthorizer) Authorize(req *http.Request) (user *root.Auth
 
 func (authorizer *BasicAuthorizer) Authenticate(res http.ResponseWriter) {
 	builder := ThcompUtility.StringBuilder{}
-	builder.Append("basic")
 
 	if authorizer.authParams != nil && len(authorizer.authParams) > 0 {
 		paramCount := 0

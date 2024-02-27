@@ -86,7 +86,7 @@ func (parser *JSONRPCExecutor) IsJSON(headers http.Header) (ret bool) {
 	return
 }
 
-func (parser *JSONRPCExecutor) Execute(req *http.Request, res http.ResponseWriter, parsedEntity interface{}, authUser root.AuthorizedUser) {
+func (parser *JSONRPCExecutor) Execute(req *http.Request, res http.ResponseWriter, authUser root.AuthorizedUser, parsedEntity interface{}) {
 	if jsonReq, assertionOK := parsedEntity.(*JSONRPCRequest); assertionOK {
 		if handler, exist := parser.ExecutorMap[jsonReq.Method]; exist {
 			handler(req, res, jsonReq, authUser)
