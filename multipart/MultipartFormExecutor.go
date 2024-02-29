@@ -22,7 +22,7 @@ func (parser *MultipartFormExecutor) CacheEditorFactory(cacheEditorFactory Thcom
 	parser.cacheEditorFactory = cacheEditorFactory
 }
 
-func (parser *MultipartFormExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
+func (parser *MultipartFormExecutor) ParseRequestBody(req *http.Request) (ret interface{}, retErr error) {
 	formData := (*MultipartFormData)(nil)
 	if multipartHelper, err := ThcompUtility.NewMultipartHelperFromHttpRequest(req); err == nil {
 		formData = &MultipartFormData{helper: multipartHelper}
@@ -33,7 +33,7 @@ func (parser *MultipartFormExecutor) ParseRequest(req *http.Request) (ret interf
 	return formData, retErr
 }
 
-func (parser *MultipartFormExecutor) ParseResponse(res *http.Response) (ret interface{}, retErr error) {
+func (parser *MultipartFormExecutor) ParseResponseBody(res *http.Response) (ret interface{}, retErr error) {
 	if contentTypeValue := res.Header.Get(`Content-type`); contentTypeValue != `` {
 		lowerContentTypeValue := strings.ToLower(contentTypeValue)
 		if strings.HasPrefix(lowerContentTypeValue, `multipart/form-data`) {

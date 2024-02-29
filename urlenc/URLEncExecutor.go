@@ -53,7 +53,7 @@ func (parser *URLEncExecutor) parseEntity(reader io.Reader) (ret *URLEncData, re
 	return
 }
 
-func (parser *URLEncExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
+func (parser *URLEncExecutor) ParseRequestBody(req *http.Request) (ret interface{}, retErr error) {
 	reader := io.Reader(nil)
 
 	if contentTypeValue := req.Header.Get(`Content-type`); contentTypeValue != `` {
@@ -86,7 +86,7 @@ func (parser *URLEncExecutor) ParseRequest(req *http.Request) (ret interface{}, 
 	}
 }
 
-func (parser *URLEncExecutor) ParseResponse(res *http.Response) (ret interface{}, retErr error) {
+func (parser *URLEncExecutor) ParseResponseBody(res *http.Response) (ret interface{}, retErr error) {
 	reader := io.Reader(nil)
 
 	if contentTypeValue := res.Header.Get(`Content-type`); contentTypeValue != `` {

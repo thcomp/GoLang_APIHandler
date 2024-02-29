@@ -38,7 +38,7 @@ func (parser *JSONRPCExecutor) RegisterExecuteHandler(condMap map[string]interfa
 	return parser
 }
 
-func (parser *JSONRPCExecutor) ParseRequest(req *http.Request) (ret interface{}, retErr error) {
+func (parser *JSONRPCExecutor) ParseRequestBody(req *http.Request) (ret interface{}, retErr error) {
 	if parser.IsJSON(req.Header) {
 		jsonReq := JSONRPCRequest{}
 		if parseErr := json.NewDecoder(req.Body).Decode(&jsonReq); parseErr == nil {
@@ -57,7 +57,7 @@ func (parser *JSONRPCExecutor) ParseRequest(req *http.Request) (ret interface{},
 	return
 }
 
-func (parser *JSONRPCExecutor) ParseResponse(res *http.Response) (ret interface{}, retErr error) {
+func (parser *JSONRPCExecutor) ParseResponseBody(res *http.Response) (ret interface{}, retErr error) {
 	if parser.IsJSON(res.Header) {
 		jsonRes := JSONRPCResponse{}
 		if parseErr := json.NewDecoder(res.Body).Decode(&jsonRes); parseErr == nil {
