@@ -13,23 +13,15 @@ import (
 type ExecuteHandler func(req *http.Request, res http.ResponseWriter, parsedEntity interface{}, authUser AuthorizedUser)
 
 type APIManager struct {
-	apiMap    map[string](*apiInfo)
-	executors []Executor
+	apiMap map[string](*apiInfo)
 }
 
 var sAPIManager APIManager = APIManager{
-	apiMap:    map[string]*apiInfo{},
-	executors: []Executor{},
+	apiMap: map[string]*apiInfo{},
 }
 
 func CreateLocalAPIManager() *APIManager {
-	ret := APIManager{}
-
-	for _, parser := range sAPIManager.executors {
-		ret.RegisterParser(parser)
-	}
-
-	return &ret
+	return &APIManager{}
 }
 
 func RegisterDefaultAPI(executor Executor, params ...interface{}) {
@@ -68,10 +60,6 @@ func RegisterAPI(path string, executor Executor, params ...interface{}) {
 	}
 
 	sAPIManager.apiMap[absPath] = tempApiInfo
-}
-
-func RegisterParser(executor Executor) {
-	sAPIManager.executors = append(sAPIManager.executors, executor)
 }
 
 func ExecuteRequest(req *http.Request, res http.ResponseWriter) {
@@ -115,11 +103,6 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 	}
 
 	manager.apiMap[absPath] = tempApiInfo
-	return manager
-}
-
-func (manager *APIManager) RegisterParser(executor Executor) *APIManager {
-	manager.executors = append(manager.executors, executor)
 	return manager
 }
 
