@@ -1,6 +1,7 @@
 package jsonrpc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -275,6 +276,15 @@ func (res *JSONRPCResponse) ParseResult(toPtr interface{}) (retErr error) {
 	}
 
 	return retErr
+}
+
+func (res *JSONRPCResponse) Reader() (ret io.Reader, retErr error) {
+	if jsonBytes, encodeErr := res.EncodeByJSON(); encodeErr == nil {
+		ret = bytes.NewReader(jsonBytes)
+	} else {
+		retErr = encodeErr
+	}
+	return
 }
 
 func NewJSONRPCError(code int, message string, data interface{}) *JSONRPCError {
