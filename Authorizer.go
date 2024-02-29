@@ -11,6 +11,6 @@ const (
 
 type Authorizer interface {
 	AuthorizeBy() AuthorizeBy
-	Authorize(*http.Request) (*AuthorizedUser, error)
+	Authorize(*http.Request) (AuthorizedUser, error)
 	Authenticate(http.ResponseWriter)
 }

@@ -10,12 +10,12 @@ import (
 )
 
 type BasicAuthorizer struct {
-	userAuthorizer func(authorizer *BasicAuthorizer, credentials string) *root.AuthorizedUser
+	userAuthorizer func(authorizer *BasicAuthorizer, credentials string) root.AuthorizedUser
 	userAuthCache  interface{}
 	authParams     map[string]string
 }
 
-func (authorizer *BasicAuthorizer) RegisterUserAuthorizer(userAuthorizer func(authorizer *BasicAuthorizer, credentials string) *root.AuthorizedUser) {
+func (authorizer *BasicAuthorizer) RegisterUserAuthorizer(userAuthorizer func(authorizer *BasicAuthorizer, credentials string) root.AuthorizedUser) {
 	authorizer.userAuthorizer = userAuthorizer
 }
 
@@ -47,7 +47,7 @@ func (authorizer *BasicAuthorizer) AuthorizeBy() root.AuthorizeBy {
 	return root.ByHttpHeader
 }
 
-func (authorizer *BasicAuthorizer) Authorize(req *http.Request) (user *root.AuthorizedUser, err error) {
+func (authorizer *BasicAuthorizer) Authorize(req *http.Request) (user root.AuthorizedUser, err error) {
 	if authorizer.userAuthorizer != nil {
 		authHeader := req.Header.Get("Authorization")
 		authHeader = strings.TrimLeft(authHeader, " \t")

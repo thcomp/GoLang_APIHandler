@@ -127,7 +127,7 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 
 		if executorApiInfo.IsAuthorizeByHttpHeader() {
 			if tempAuthorizedUser, authErr := executorApiInfo.authorizer.Authorize(req); authErr == nil {
-				authorizedUser = *tempAuthorizedUser
+				authorizedUser = tempAuthorizedUser
 				tempAuthorized := true
 				authorized = &tempAuthorized
 			} else {
@@ -145,7 +145,7 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 
 				if authorized == nil && executorApiInfo.authorizer.AuthorizeBy() == ByHttpEntity {
 					if tempAuthorizedUser, authErr := executorApiInfo.authorizer.Authorize(req); authErr == nil {
-						authorizedUser = *tempAuthorizedUser
+						authorizedUser = tempAuthorizedUser
 						tempAuthorized := true
 						authorized = &tempAuthorized
 					} else {
