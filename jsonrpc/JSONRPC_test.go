@@ -1,4 +1,4 @@
-package jsonroc
+package jsonrpc
 
 import (
 	"bytes"
