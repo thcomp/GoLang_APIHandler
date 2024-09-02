@@ -1,4 +1,4 @@
-github.com/rs/xid v1.3.0 h1:6NjYksEUlhurdVehpc7S7dk6DAmcKv8V9gG0FsVN2U4=
-github.com/rs/xid v1.3.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
-github.com/thcomp/GoLang_Utility v1.28.0 h1:dIIZHnD75qc2LqP1Kzhr6iHA/rJe0OuF2y9k8f9sarc=
-github.com/thcomp/GoLang_Utility v1.28.0/go.mod h1:paaku44As4b/XwsjqwReXieybMZ3VONHERqwEytHZGc=
+github.com/rs/xid v1.5.0 h1:mKX4bl4iPYJtEIxp6CYiUuLQ/8DYMoz0PUdtGgMFRVc=
+github.com/rs/xid v1.5.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
+github.com/thcomp/GoLang_Utility v1.29.10 h1:F54M+2hjJYAJWfZ5gEf0ZTmk9kpb0J+5mI/0HEDu86k=
+github.com/thcomp/GoLang_Utility v1.29.10/go.mod h1:ges+bpSSIl0BpDUjFYVM3RH1ilhtUHHvcrp69fkzq/M=
