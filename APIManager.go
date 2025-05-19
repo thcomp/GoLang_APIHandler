@@ -40,7 +40,7 @@ func RegisterDefaultAPI(executor Executor, params ...interface{}) {
 	sAPIManager.apiMap["/"] = tempApiInfo
 }
 
-func RegisterAPI(path string, executor Executor, params ...interface{}) {
+func RegisterAPI(method *string, path string, executor Executor, params ...interface{}) {
 	absPath := path
 
 	if !strings.HasPrefix(absPath, "/") {
@@ -48,6 +48,7 @@ func RegisterAPI(path string, executor Executor, params ...interface{}) {
 	}
 
 	tempApiInfo := &apiInfo{
+		method:   method,
 		executor: executor,
 	}
 
@@ -59,6 +60,9 @@ func RegisterAPI(path string, executor Executor, params ...interface{}) {
 		}
 	}
 
+	if method != nil {
+		absPath = absPath + `_` + strings.ToLower(*method)
+	}
 	sAPIManager.apiMap[absPath] = tempApiInfo
 }
 
@@ -83,7 +87,7 @@ func (manager *APIManager) RegisterDefaultAPI(executor Executor, params ...inter
 	return manager
 }
 
-func (manager *APIManager) RegisterAPI(path string, executor Executor, params ...interface{}) *APIManager {
+func (manager *APIManager) RegisterAPI(method *string, path string, executor Executor, params ...interface{}) *APIManager {
 	absPath := path
 
 	if !strings.HasPrefix(absPath, "/") {
@@ -91,6 +95,7 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 	}
 
 	tempApiInfo := &apiInfo{
+		method:   method,
 		executor: executor,
 	}
 
@@ -102,6 +107,9 @@ func (manager *APIManager) RegisterAPI(path string, executor Executor, params ..
 		}
 	}
 
+	if method != nil {
+		absPath = absPath + `_` + strings.ToLower(*method)
+	}
 	manager.apiMap[absPath] = tempApiInfo
 	return manager
 }
@@ -113,7 +121,11 @@ func (manager *APIManager) ExecuteRequest(req *http.Request, res http.ResponseWr
 	}
 	executorApiInfo := (*apiInfo)(nil)
 
-	if apiInfo, exist := manager.apiMap[path]; exist {
+	pathWithMethod := path + `_` + strings.ToLower(req.Method)
+
+	if apiInfo, exist := manager.apiMap[pathWithMethod]; exist {
+		executorApiInfo = apiInfo
+	} else if apiInfo, exist := manager.apiMap[path]; exist {
 		executorApiInfo = apiInfo
 	} else {
 		if apiInfo, exist := manager.apiMap["/"]; exist {

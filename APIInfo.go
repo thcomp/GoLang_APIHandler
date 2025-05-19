@@ -5,8 +5,13 @@ import (
 )
 
 type apiInfo struct {
+	method     *string
 	executor   Executor
 	authorizer Authorizer
+}
+
+func (info *apiInfo) Method() *string {
+	return info.method
 }
 
 func (info *apiInfo) IsAuthorizeByHttpHeader() bool {
